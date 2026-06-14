@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Deep Sea Diver</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f8f9fa; --surface: #ffffff; --surface2: #f1f3f4;
+    --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.25);
+    --text: #1a1a1a; --text2: #5f6368; --text3: #9aa0a6;
+    --teal: #1D9E75; --teal-light: #E1F5EE; --teal-dark: #085041;
+    --blue: #185FA5; --blue-light: #E6F1FB;
+    --amber: #BA7517; --amber-light: #FAEEDA;
+    --coral: #993C1D; --coral-light: #FAECE7;
+    --pink: #993556; --pink-light: #FBEAF0;
+    --green: #3B6D11; --green-light: #EAF3DE;
+    --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a; --surface: #242424; --surface2: #2e2e2e;
+      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.2);
+      --text: #e8eaed; --text2: #9aa0a6; --text3: #5f6368;
+      --teal-light: #04342C; --blue-light: #042C53;
+      --amber-light: #412402; --coral-light: #4A1B0C;
+      --pink-light: #4B1528; --green-light: #173404;
+    }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .screen { display: none; max-width: 680px; margin: 0 auto; padding: 2rem 1rem; }
+  .screen.active { display: block; }
+  h1 { font-size: 28px; font-weight: 600; color: var(--text); }
+  h2 { font-size: 18px; font-weight: 500; color: var(--text); margin-bottom: 1rem; }
+  p { font-size: 14px; color: var(--text2); line-height: 1.6; }
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+  button { cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 500; padding: 9px 20px; border-radius: var(--radius-md); border: 0.5px solid var(--border2); background: transparent; color: var(--text); transition: background 0.15s, transform 0.1s; }
+  button:hover { background: var(--surface2); }
+  button:active { transform: scale(0.98); }
+  button.primary { background: var(--teal); color: #E1F5EE; border-color: var(--teal); }
+  button.primary:hover { background: var(--teal-dark); }
+  button.danger { background: var(--coral); color: #FAECE7; border-color: var(--coral); }
+  button.full { width: 100%; margin-top: 0.5rem; }
+  input[type=text] { font-family: inherit; font-size: 14px; padding: 8px 12px; border-radius: var(--radius-md); border: 0.5px solid var(--border2); background: var(--surface); color: var(--text); width: 100%; margin-bottom: 8px; outline: none; transition: border-color 0.2s; }
+  input[type=text]:focus { border-color: var(--teal); }
+  .badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: var(--radius-md); }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .board-wrap { overflow-x: auto; padding: 0.5rem 0 1rem; margin-bottom: 0.5rem; }
+  .board { display: flex; gap: 5px; min-width: max-content; }
+  .chip { width: 54px; height: 70px; border-radius: 10px; border: 0.5px solid var(--border2); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; position: relative; background: var(--surface); transition: border-color 0.2s; }
+  .chip.sub { background: var(--blue-light); border-color: var(--blue); }
+  .chip.occupied { border-color: var(--teal); border-width: 1.5px; }
+  .chip .val { font-size: 20px; font-weight: 600; color: var(--text); }
+  .chip .empty-val { font-size: 18px; color: var(--text3); }
+  .chip .chip-label { font-size: 10px; color: var(--text2); }
+  .chip .avatars { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; max-width: 50px; }
+  .avatar { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; }
+  .players-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 1rem; }
+  .player-card { background: var(--surface2); border-radius: var(--radius-md); padding: 10px 12px; border: 0.5px solid var(--border); border-left: 3px solid transparent; }
+  .player-card.active-player { background: var(--surface); border-color: var(--border2); }
+  .player-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .player-info { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .player-status { margin-top: 5px; }
+  .log { background: var(--surface2); border-radius: var(--radius-md); padding: 10px 14px; font-size: 12px; color: var(--text2); line-height: 2; max-height: 110px; overflow-y: auto; margin-bottom: 1rem; border: 0.5px solid var(--border); }
+  .log .log-entry { border-bottom: 0.5px solid var(--border); padding: 1px 0; }
+  .log .log-entry:last-child { border-bottom: none; }
+  .action-box { border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; border: 0.5px solid; }
+  .action-box.teal { background: var(--teal-light); border-color: var(--teal); }
+  .action-box.amber { background: var(--amber-light); border-color: var(--amber); }
+  .action-box h3 { font-size: 15px; font-weight: 500; margin-bottom: 5px; }
+  .action-box.teal h3 { color: var(--teal-dark); }
+  .action-box.amber h3 { color: var(--amber); }
+  .action-box p { font-size: 13px; }
+  .action-box.teal p { color: var(--teal-dark); }
+  .action-box.amber p { color: var(--amber); }
+  .air-bar-wrap { margin-bottom: 1rem; }
+  .air-label { font-size: 12px; color: var(--text2); margin-bottom: 5px; display: flex; justify-content: space-between; }
+  .air-label strong { color: var(--text); }
+  .air-bar { height: 10px; background: var(--surface2); border-radius: 5px; overflow: hidden; border: 0.5px solid var(--border); }
+  .air-fill { height: 100%; border-radius: 5px; background: var(--teal); transition: width 0.5s ease, background 0.3s; }
+  .air-fill.low { background: #D85A30; }
+  .top-bar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+  .score-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 0.5px solid var(--border); font-size: 14px; }
+  .score-row:last-child { border-bottom: none; }
+  .mode-btns { display: flex; gap: 8px; margin-bottom: 1rem; }
+  .mode-btn { flex: 1; padding: 10px; text-align: center; }
+  .mode-btn.selected { background: var(--teal-light); border-color: var(--teal); color: var(--teal-dark); }
+  .hero { text-align: center; padding: 2rem 0 1.5rem; }
+  .hero-icon { font-size: 56px; margin-bottom: 12px; }
+  .hero p { max-width: 380px; margin: 8px auto 0; }
+  .tech-note { font-size: 12px; color: var(--text3); line-height: 1.8; }
+  .tech-note strong { color: var(--text2); }
+  .winner-icon { font-size: 48px; text-align: center; margin-bottom: 12px; }
+  .divider { border: none; border-top: 0.5px solid var(--border); margin: 1rem 0; }
+  .rank-1 { font-size: 16px; font-weight: 600; }
+  .chip-idx { font-size: 9px; color: var(--text3); }
+</style>
+</head>
+<body>
+
+<div id="setup-screen" class="screen active">
+  <div class="hero">
+    <div class="hero-icon">🤿</div>
+    <h1>Deep Sea Diver</h1>
+    <p>A board game implementation using Dancing Links, doubly linked lists, and circular linked lists.</p>
+  </div>
+
+  <div class="card">
+    <h2>Game mode</h2>
+    <div class="mode-btns">
+      <button class="mode-btn selected" id="btn-human" onclick="setMode('human')">👥 Human players</button>
+      <button class="mode-btn" id="btn-ai" onclick="setMode('ai')">🤖 vs AI</button>
+    </div>
+    <h2 id="player-label">Players (2–6)</h2>
+    <div id="player-inputs">
+      <input type="text" placeholder="Player 1" value="Alice" id="p1" />
+      <input type="text" placeholder="Player 2" value="Bob" id="p2" />
+    </div>
+    <div class="row" style="margin-bottom:1rem">
+      <button onclick="addPlayer()">+ add player</button>
+      <button onclick="removePlayer()">− remove</button>
+    </div>
+    <button class="primary full" onclick="startGame()">🌊 Dive in</button>
+  </div>
+
+  <div class="card">
+    <p class="tech-note">
+      Board → <strong>doubly linked list</strong> &nbsp;·&nbsp;
+      Turn order → <strong>circular linked list</strong> &nbsp;·&nbsp;
+      Jump mechanic → <strong>Dancing Links</strong> (Knuth, 2000) &nbsp;·&nbsp;
+      Worst-case per turn → <strong>O(18)</strong> constant time
+    </p>
+  </div>
+</div>
+
+<div id="game-screen" class="screen">
+  <div class="top-bar">
+    <span class="badge" id="dive-badge" style="background:var(--teal-light);color:var(--teal-dark)">Dive 1 / 3</span>
+    <div style="flex:1">
+      <div class="air-label"><span>Air tank</span><strong id="air-val">25</strong></div>
+      <div class="air-bar"><div class="air-fill" id="air-fill" style="width:100%"></div></div>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <div class="board" id="board-el"></div>
+  </div>
+
+  <div class="players-grid" id="players-el"></div>
+
+  <div class="action-box teal" id="action-box">
+    <h3 id="action-title">—</h3>
+    <p id="action-desc">—</p>
+  </div>
+
+  <div class="row" id="action-btns" style="margin-bottom:1rem; gap:8px;"></div>
+
+  <div class="log" id="log"></div>
+</div>
+
+<div id="end-screen" class="screen">
+  <div class="winner-icon">🏆</div>
+  <h1 style="text-align:center; margin-bottom:0.5rem" id="winner-title">—</h1>
+  <p style="text-align:center; margin-bottom:1.5rem">Final scores after 3 dives</p>
+  <div class="card" id="final-scores"></div>
+  <button class="primary full" onclick="resetGame()" style="margin-top:0.75rem">Play again</button>
+</div>
+
+<script>
+const COLORS = [
+  { avatar: '#5DCAA5', text: '#04342C', light: '#E1F5EE', border: '#1D9E75' },
+  { avatar: '#85B7EB', text: '#042C53', light: '#E6F1FB', border: '#185FA5' },
+  { avatar: '#EF9F27', text: '#412402', light: '#FAEEDA', border: '#BA7517' },
+  { avatar: '#D85A30', text: '#4A1B0C', light: '#FAECE7', border: '#993C1D' },
+  { avatar: '#D4537E', text: '#4B1528', light: '#FBEAF0', border: '#993556' },
+  { avatar: '#97C459', text: '#173404', light: '#EAF3DE', border: '#3B6D11' },
+];
+
+let mode = 'human';
+let playerCount = 2;
+let state = {};
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-human').classList.toggle('selected', m === 'human');
+  document.getElementById('btn-ai').classList.toggle('selected', m === 'ai');
+  document.getElementById('player-label').textContent = m === 'ai' ? 'Your name' : 'Players (2–6)';
+  const inputs = document.getElementById('player-inputs');
+  if (m === 'ai') {
+    inputs.innerHTML = '<input type="text" placeholder="Your name" value="You" id="p1" />';
+    playerCount = 1;
+  } else {
+    inputs.innerHTML = '<input type="text" placeholder="Player 1" value="Alice" id="p1" /><input type="text" placeholder="Player 2" value="Bob" id="p2" />';
+    playerCount = 2;
+  }
+}
+
+function addPlayer() {
+  if (mode === 'ai' || playerCount >= 6) return;
+  playerCount++;
+  const names = ['Alice','Bob','Carlos','Diana','Erik','Fatima'];
+  const inp = document.createElement('input');
+  inp.type = 'text'; inp.placeholder = 'Player ' + playerCount;
+  inp.id = 'p' + playerCount; inp.value = names[playerCount - 1] || '';
+  document.getElementById('player-inputs').appendChild(inp);
+}
+
+function removePlayer() {
+  if (mode === 'ai' || playerCount <= 2) return;
+  const inp = document.getElementById('p' + playerCount);
+  if (inp) inp.remove();
+  playerCount--;
+}
+
+function makeBoard(n) {
+  return Array.from({ length: n }, (_, i) => ({ value: Math.floor(Math.random() * 5) + 1, playerIdx: null, idx: i }));
+}
+
+function makePlayers(names, isAI) {
+  return names.map((name, i) => ({
+    name, treasure: 0, position: null, returned: false,
+    score: 0, color: COLORS[i % COLORS.length],
+    isAI: isAI && i > 0, idx: i
+  }));
+}
+
+function startGame() {
+  const names = [];
+  for (let i = 1; i <= (mode === 'ai' ? 1 : playerCount); i++) {
+    const el = document.getElementById('p' + i);
+    if (el) names.push(el.value.trim() || 'Player ' + i);
+  }
+  if (mode === 'ai') { names.push('AI Diver 1', 'AI Diver 2'); }
+
+  state = {
+    players: makePlayers(names, mode === 'ai'),
+    board: makeBoard(26),
+    air: 25, dive: 1, currentIdx: 0,
+    activeCount: names.length, log: [],
+  };
+
+  show('game-screen');
+  render();
+  nextTurn();
+}
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function log(msg) {
+  state.log.unshift(msg);
+  if (state.log.length > 40) state.log.pop();
+}
+
+function render() {
+  renderBoard();
+  renderPlayers();
+  renderAir();
+  document.getElementById('dive-badge').textContent = 'Dive ' + state.dive + ' / 3';
+  const logEl = document.getElementById('log');
+  logEl.innerHTML = state.log.slice(0, 10).map(e => `<div class="log-entry">${e}</div>`).join('');
+}
+
+function renderAir() {
+  const pct = Math.max(0, (state.air / 25) * 100);
+  const fill = document.getElementById('air-fill');
+  fill.style.width = pct + '%';
+  fill.className = 'air-fill' + (state.air <= 8 ? ' low' : '');
+  document.getElementById('air-val').textContent = Math.max(0, state.air);
+}
+
+function renderBoard() {
+  const el = document.getElementById('board-el');
+  el.innerHTML = '';
+
+  const sub = document.createElement('div');
+  sub.className = 'chip sub';
+  const subPlayers = state.players.filter(p => p.returned || p.position === null);
+  const subAvatars = subPlayers.map(p =>
+    `<div class="avatar" style="background:${p.color.avatar};color:${p.color.text}" title="${p.name}">${p.name[0]}</div>`
+  ).join('');
+  sub.innerHTML = `<span style="font-size:20px">🚢</span><div class="avatars">${subAvatars}</div>`;
+  el.appendChild(sub);
+
+  state.board.forEach((chip, i) => {
+    const div = document.createElement('div');
+    const playersHere = state.players.filter(p => p.position === i);
+    div.className = 'chip' + (playersHere.length ? ' occupied' : '');
+    const avatarHTML = playersHere.map(p =>
+      `<div class="avatar" style="background:${p.color.avatar};color:${p.color.text}" title="${p.name}">${p.name[0]}</div>`
+    ).join('');
+    div.innerHTML = chip.value > 0
+      ? `<span class="val">${chip.value}</span>${avatarHTML ? `<div class="avatars">${avatarHTML}</div>` : ''}<span class="chip-idx">#${i+1}</span>`
+      : `<span class="empty-val">·</span>${avatarHTML ? `<div class="avatars">${avatarHTML}</div>` : ''}<span class="chip-idx">#${i+1}</span>`;
+    el.appendChild(div);
+  });
+}
+
+function renderPlayers() {
+  const cur = state.players[state.currentIdx];
+  document.getElementById('players-el').innerHTML = state.players.map(p => {
+    const isActive = p === cur && !p.returned;
+    let statusHTML = '';
+    if (p.returned) {
+      statusHTML = `<span class="badge" style="background:${p.color.light};color:${p.color.border};font-size:10px">returned ✓</span>`;
+    } else if (p.position !== null) {
+      statusHTML = `<span class="badge" style="background:#E1F5EE;color:#085041;font-size:10px">diving 🤿</span>`;
+    } else {
+      statusHTML = `<span class="badge" style="background:var(--surface2);color:var(--text3);font-size:10px">in sub</span>`;
+    }
+    return `<div class="player-card ${isActive ? 'active-player' : ''}" style="border-left-color:${p.color.avatar}">
+      <div class="player-name">${p.name}${p.isAI ? ' 🤖' : ''}</div>
+      <div class="player-info">carrying: <strong>${p.treasure}</strong> &nbsp;·&nbsp; score: <strong>${p.score}</strong></div>
+      <div class="player-status">${statusHTML}</div>
+    </div>`;
+  }).join('');
+}
+
+function setAction(title, desc, btns, style) {
+  const box = document.getElementById('action-box');
+  box.className = 'action-box ' + (style || 'teal');
+  document.getElementById('action-title').textContent = title;
+  document.getElementById('action-desc').textContent = desc;
+  const el = document.getElementById('action-btns');
+  el.innerHTML = '';
+  btns.forEach(b => {
+    const btn = document.createElement('button');
+    btn.textContent = b.label;
+    btn.className = b.cls || '';
+    btn.onclick = b.fn;
+    el.appendChild(btn);
+  });
+}
+
+function rollDice() {
+  return Math.floor(Math.random() * 3) + 1 + Math.floor(Math.random() * 3) + 1;
+}
+
+function movePlayer(player, steps) {
+  if (player.position !== null) state.board[player.position].playerIdx = null;
+  let pos = player.position === null ? -1 : player.position;
+  for (let s = 0; s < steps; s++) {
+    let next = pos + 1;
+    if (next >= state.board.length) break;
+    while (next < state.board.length && state.board[next].playerIdx !== null) next++;
+    if (next >= state.board.length) { next = state.board.length - 1; break; }
+    pos = next;
+  }
+  if (pos < 0) pos = 0;
+  player.position = pos;
+  state.board[pos].playerIdx = player.idx;
+}
+
+function nextTurn() {
+  const p = state.players[state.currentIdx];
+  if (p.returned) { advanceTurn(); return; }
+  if (p.isAI) { doAITurn(p); return; }
+
+  const dice = rollDice();
+  log(`🎲 ${p.name} rolls ${dice}`);
+  movePlayer(p, dice);
+  render();
+
+  const chip = state.board[p.position];
+  setAction(
+    `${p.name}'s turn — rolled ${dice}`,
+    `Landed on chip #${p.position + 1} worth ${chip.value} · Currently carrying ${p.treasure} treasure`,
+    [
+      { label: `Pick up ${chip.value} 💎`, cls: 'primary', fn: () => doPickup(p) },
+      { label: `Drop ${p.treasure} 📦`, fn: () => doDrop(p) },
+    ]
+  );
+}
+
+function doPickup(p) {
+  const chip = state.board[p.position];
+  p.treasure += chip.value;
+  log(`💎 ${p.name} picks up ${chip.value} (now carrying ${p.treasure})`);
+  chip.value = 0;
+  render();
+  askReturn(p);
+}
+
+function doDrop(p) {
+  const chip = state.board[p.position];
+  chip.value += p.treasure;
+  log(`📦 ${p.name} drops ${p.treasure} treasure`);
+  p.treasure = 0;
+  render();
+  askReturn(p);
+}
+
+function askReturn(p) {
+  setAction(
+    'Head back to the submarine?',
+    `${p.name} is carrying ${p.treasure} treasure. Air remaining: ${state.air}`,
+    [
+      { label: '🚢 Return to sub', cls: 'primary', fn: () => doReturn(p) },
+      { label: '🌊 Keep diving', fn: () => advanceTurn() },
+    ],
+    'amber'
+  );
+}
+
+function doReturn(p) {
+  if (p.position !== null) state.board[p.position].playerIdx = null;
+  p.score += p.treasure;
+  log(`🚢 ${p.name} returns safely with ${p.treasure} treasure! (total: ${p.score})`);
+  p.treasure = 0;
+  p.position = null;
+  p.returned = true;
+  state.activeCount--;
+  render();
+  advanceTurn();
+}
+
+function advanceTurn() {
+  state.currentIdx = (state.currentIdx + 1) % state.players.length;
+  if (state.currentIdx === 0) {
+    const totalCarried = state.players.reduce((s, p) => s + (!p.returned ? p.treasure : 0), 0);
+    state.air -= totalCarried;
+    log(`💨 Air drops by ${totalCarried} → ${Math.max(0, state.air)} remaining`);
+    render();
+    if (state.air <= 0) { endDive(true); return; }
+  }
+  if (state.activeCount <= 0) { endDive(false); return; }
+  nextTurn();
+}
+
+function doAITurn(p) {
+  setAction(`${p.name} is thinking...`, 'AI is calculating optimal move', [], 'teal');
+  setTimeout(() => {
+    const dice = rollDice();
+    log(`🎲 ${p.name} (AI) rolls ${dice}`);
+    movePlayer(p, dice);
+    const chip = state.board[p.position];
+    if (chip.value > 0 && p.treasure < 7) {
+      p.treasure += chip.value;
+      log(`💎 ${p.name} picks up ${chip.value}`);
+      chip.value = 0;
+    }
+    const shouldReturn = p.treasure >= 6 || state.air <= 8 || p.position >= 20;
+    render();
+    if (shouldReturn && p.treasure > 0) {
+      setTimeout(() => { doReturn(p); }, 500);
+    } else {
+      setTimeout(() => advanceTurn(), 600);
+    }
+  }, 800);
+}
+
+function endDive(airDied) {
+  if (airDied) {
+    state.players.forEach(p => {
+      if (!p.returned && p.position !== null) {
+        log(`💀 ${p.name} loses ${p.treasure} treasure — out of air!`);
+        state.board[p.position].value += p.treasure;
+        state.board[p.position].playerIdx = null;
+        p.treasure = 0; p.position = null; p.returned = true;
+      }
+    });
+  }
+  render();
+  if (state.dive >= 3) { showEnd(); return; }
+
+  state.dive++;
+  state.air = 25;
+  state.currentIdx = 0;
+  state.activeCount = state.players.length;
+  state.players.forEach(p => { p.returned = false; p.position = null; p.treasure = 0; });
+  log(`--- Dive ${state.dive} begins ---`);
+  render();
+  setAction(
+    `Dive ${state.dive} of 3`,
+    airDied ? 'Air ran out! Uncollected treasure stays on the board for next dive.' : 'All divers returned safely!',
+    [{ label: '🌊 Start dive', cls: 'primary', fn: () => nextTurn() }]
+  );
+}
+
+function showEnd() {
+  const sorted = [...state.players].sort((a, b) => b.score - a.score);
+  document.getElementById('winner-title').textContent = sorted[0].name + ' wins!';
+  document.getElementById('final-scores').innerHTML =
+    sorted.map((p, i) => `<div class="score-row">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="avatar" style="background:${p.color.avatar};color:${p.color.text};width:28px;height:28px;font-size:12px">${p.name[0]}</div>
+        <span class="${i === 0 ? 'rank-1' : ''}">${i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : '🥉 '}${p.name}</span>
+      </div>
+      <span style="font-weight:${i===0?'600':'400'}">${p.score} treasure</span>
+    </div>`).join('');
+  show('end-screen');
+}
+
+function resetGame() { show('setup-screen'); }
+</script>
+</body>
+</html>
